@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Scoutflo Teaser</title>
+<meta name="viewport" content="width=1440">
+<style>
+@font-face { font-family: "Geist"; src: url("fonts/Geist-Variable.woff2") format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Geist Mono"; src: url("fonts/GeistMono-Variable.woff2") format("woff2"); font-weight: 100 900; }
+:root {
+  --canvas: #ECEAE6; --ink: #0E0E0F; --ink2: #5E5C58; --ink3: #9A9791;
+  --line: #E3E0DB; --soft: #F4F3F0; --blue: #2F6BFF; --red: #E5484D;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1440px; height: 1440px; overflow: hidden; background: var(--canvas); }
+body { font-family: "Geist", system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+.mono { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.tab { font-variant-numeric: tabular-nums; }
+#frame { position: relative; width: 1440px; height: 1440px; overflow: hidden; background: var(--canvas); }
+#stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+#blob { position: absolute; overflow: hidden; background: #fff;
+  box-shadow: 0 0 0 1px rgba(20,18,15,.06), 0 1px 2px rgba(20,18,15,.05), 0 18px 40px -16px rgba(20,18,15,.18); }
+.o { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.layer { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+.c, .l, .r { position: absolute; white-space: nowrap; }
+.c { transform: translate(-50%, -50%); }
+.l { transform: translate(0, -50%); }
+.r { transform: translate(-100%, -50%); }
+.pill { border-radius: 999px; display: flex; align-items: center; justify-content: center; }
+.hair { position: absolute; height: 1px; background: var(--line); }
+svg.ic { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
+#cursor { position: absolute; left: 0; top: 0; width: 46px; height: 46px; transform-origin: 4px 4px; }
+#sat { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+</style>
+</head>
+<body>
+<div id="frame">
+  <div id="stage">
+    <!-- satellites behind the blob: topology edges + neighbour nodes -->
+    <div id="satBack" class="o" style="left:0;top:0">
+      <svg id="edges" width="1400" height="800" viewBox="-700 -400 1400 800" style="position:absolute;left:-700px;top:-400px;overflow:visible">
+        <path id="e1" d="M -150 0 C -230 0 -205 -170 -285 -170" fill="none" stroke="#8F8C86" stroke-width="2" stroke-linecap="round"/>
+        <path id="e2" d="M 150 0 C 230 0 195 170 275 170" fill="none" stroke="#8F8C86" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <div id="n1" class="c pill mono" style="left:-400px;top:-170px;width:230px;height:76px;background:#fff;font-size:22px;box-shadow:0 0 0 1px rgba(20,18,15,.08),0 10px 24px -14px rgba(20,18,15,.2)">cart-svc</div>
+      <div id="n2" class="c pill mono" style="left:400px;top:170px;width:250px;height:76px;background:#fff;font-size:22px;box-shadow:0 0 0 1px rgba(20,18,15,.08),0 10px 24px -14px rgba(20,18,15,.2)">payments-db</div>
+      <div id="nLabel" class="c mono" style="left:0;top:78px;font-size:21px;color:var(--red)">p95 2.41s</div>
+    </div>
+
+    <!-- THE element -->
+    <div id="blob"><div class="o" id="blobO">
+
+      <div class="layer" id="L_word">
+        <div class="c" style="left:0;top:0;font-size:33px;font-weight:620;letter-spacing:-0.035em">Scoutflo</div>
+      </div>
+
+      <div class="layer" id="L_alert">
+        <div id="alertDot" class="c" style="left:-286px;top:0;width:13px;height:13px;border-radius:50%;background:var(--red)"></div>
+        <div class="l" style="left:-266px;top:0;font-size:25px"><span class="mono" style="font-weight:520">checkout-api</span><span style="color:var(--ink2)"> · p95 &gt; 2s</span></div>
+        <div id="invBtn" class="c pill" style="left:222px;top:0;width:170px;height:56px;background:var(--ink);color:#fff;font-size:21px;font-weight:520">Investigate</div>
+      </div>
+
+      <div class="layer" id="L_button">
+        <div class="c" style="left:0;top:0;font-size:26px;font-weight:520;color:#fff">Investigate</div>
+      </div>
+
+      <div class="layer" id="L_loader">
+        <svg id="spin1" class="c ic" viewBox="0 0 24 24" style="left:-118px;top:0;color:#fff"><circle cx="12" cy="12" r="9" stroke-opacity=".25"/><path d="M12 3 a9 9 0 0 1 9 9"/></svg>
+        <div class="l" style="left:-94px;top:0;font-size:25px;font-weight:500;color:#fff">Investigating<span id="dots"></span></div>
+      </div>
+
+      <div class="layer" id="L_list">
+        <div class="l" style="left:-350px;top:-150px;font-size:21px;color:var(--ink2)">Investigating <span class="mono" style="color:var(--ink);font-weight:520">checkout-api</span></div>
+        <div class="r mono" style="left:350px;top:-150px;font-size:20px;color:var(--ink)">p95 2.41s</div>
+        <div class="hair" style="left:-390px;width:780px;top:-110px"></div>
+        <div class="hair" style="left:-360px;width:720px;top:-10px"></div>
+        <div class="hair" style="left:-360px;width:720px;top:80px"></div>
+      </div>
+      <!-- hypothesis rows are their own layers so each resolves / exits on its own time -->
+      <div class="layer" id="row0"></div>
+      <div class="layer" id="row1"></div>
+      <div class="layer" id="row2"></div>
+
+      <div class="layer" id="L_node">
+        <div id="nodeText" class="c mono" style="left:0;top:0;font-size:26px;font-weight:520">checkout-api</div>
+      </div>
+
+      <div class="layer" id="L_tl">
+        <div class="l" style="left:-450px;top:-112px;font-size:23px;font-weight:600">Deploys <span class="mono" style="font-weight:420;color:var(--ink2);font-size:20px;margin-left:8px">checkout-api</span></div>
+        <div class="r mono" style="left:450px;top:-112px;font-size:18px;color:var(--ink3)">last 6h</div>
+        <div id="tlBase" style="position:absolute;top:19px;height:2px;border-radius:1px;background:#DAD7D2"></div>
+        <div id="tlProg" style="position:absolute;top:19px;height:2px;border-radius:1px;background:var(--ink)"></div>
+        <div id="tlMarks"></div>
+        <div id="scrub" style="position:absolute;top:-6px;height:52px;border-radius:26px;background:var(--ink);box-shadow:0 6px 14px -6px rgba(0,0,0,.35)"></div>
+      </div>
+
+      <div class="layer" id="L_chip">
+        <div class="l mono" style="left:-196px;top:0;font-size:19px;color:var(--ink3)">v2.41</div>
+      </div>
+
+      <div class="layer" id="L_rca">
+        <div class="l mono" style="left:-380px;top:-212px;font-size:16px;color:var(--ink3);letter-spacing:.08em">ROOT CAUSE</div>
+        <div class="r mono" style="left:380px;top:-212px;font-size:16px;color:var(--ink3)">INC-2291</div>
+        <div class="l" style="left:-380px;top:-164px;font-size:35px;font-weight:620;letter-spacing:-0.025em">Connection pool cut in v2.41</div>
+        <div class="l" style="left:-380px;top:-116px;font-size:20px;color:var(--ink2)"><span class="mono">checkout-api</span> queues on <span class="mono">payments-db</span>; p95 rose 13× after deploy.</div>
+        <div class="c" style="left:0;top:-26px;width:760px;height:84px;border-radius:16px;background:var(--soft)"></div>
+        <div class="l mono" style="left:-354px;top:-26px;font-size:17px;color:var(--ink3)">config/db.yaml</div>
+        <div class="l" style="left:-380px;top:68px;font-size:20px;color:var(--ink2)">Confidence</div>
+        <div style="position:absolute;left:-230px;top:63px;width:520px;height:10px;border-radius:5px;background:#E8E6E2"></div>
+        <div id="confBar" style="position:absolute;left:-230px;top:63px;width:0;height:10px;border-radius:5px;background:var(--blue)"></div>
+        <div id="confVal" class="r mono" style="left:380px;top:68px;font-size:24px;font-weight:560">0%</div>
+        <div class="hair" style="left:-380px;width:760px;top:132px"></div>
+        <div class="l" style="left:-380px;top:198px;font-size:22px;font-weight:600">Ops Mode</div>
+        <div class="l mono" style="left:-262px;top:199px;font-size:18px;color:var(--ink2)">watch p95 every 5m</div>
+        <div id="togTrack" class="c" style="left:330px;top:198px;width:64px;height:36px;border-radius:18px;background:#D8D5D0"></div>
+      </div>
+
+      <!-- the diff line survives the chip -> card morph: same element, it only moves -->
+      <div class="layer" id="L_pool">
+        <div id="poolTxt" class="l mono" style="left:-112px;top:0;font-size:25px"><span>pool_size</span> <span style="color:var(--ink3);text-decoration:line-through">50</span> <span style="color:var(--ink3)">→</span> <span style="font-weight:600">10</span></div>
+      </div>
+
+      <div class="layer" id="L_tabs">
+        <div class="l" style="left:-420px;top:-280px;font-size:27px;font-weight:620;letter-spacing:-0.02em">p95 latency</div>
+        <div class="l mono" style="left:-420px;top:-246px;font-size:17px;color:var(--ink3)">checkout-api · last 1h</div>
+        <div class="c" style="left:210px;top:-266px;width:420px;height:56px;border-radius:28px;background:#F0EEEA"></div>
+      </div>
+
+      <div class="layer" id="L_chart">
+        <svg id="chart" width="900" height="560" viewBox="-450 -230 900 560" style="position:absolute;left:-450px;top:-230px;overflow:visible">
+          <g id="grid" font-family="Geist Mono" font-size="16" fill="#9A9791"></g>
+          <line id="depLine" stroke="#B9B6B0" stroke-width="1.5" stroke-dasharray="4 5"/>
+          <text id="depLbl" font-family="Geist Mono" font-size="16" fill="#5E5C58" text-anchor="end">v2.41</text>
+          <path id="line" fill="none" stroke="#0E0E0F" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+          <g id="tip">
+            <line id="tipX" stroke="#0E0E0F" stroke-opacity=".25" stroke-width="1.5"/>
+            <circle id="tipDot" r="7" fill="#0E0E0F" stroke="#fff" stroke-width="3"/>
+          </g>
+        </svg>
+        <div id="tipBox" class="r" style="padding:12px 16px;border-radius:12px;background:var(--ink);color:#fff;line-height:1.3">
+          <div class="mono" style="font-size:21px;font-weight:560">p95 2.41s</div>
+          <div class="mono" style="font-size:15px;color:#A9A7A2">14:02 · after v2.41</div>
+        </div>
+      </div>
+
+      <div class="layer" id="L_pal">
+        <svg class="c ic" viewBox="0 0 24 24" style="left:-345px;top:-160px;color:var(--ink3)"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <div id="palText" class="l" style="left:-318px;top:-160px;font-size:27px"></div>
+        <div class="c mono" style="left:338px;top:-160px;font-size:16px;color:var(--ink2);padding:5px 9px;border-radius:8px;box-shadow:0 0 0 1px #DDDAD5">⌘K</div>
+        <div class="hair" style="left:-380px;width:760px;top:-116px"></div>
+        <div class="c" style="left:0;top:-62px;width:736px;height:58px;border-radius:14px;background:#F2F1EE"></div>
+        <div id="palRows"></div>
+      </div>
+
+      <div class="layer" id="L_conf">
+        <div class="l" style="left:-270px;top:-62px;font-size:31px;font-weight:620;letter-spacing:-0.02em">Approve rollback?</div>
+        <div class="l mono" style="left:-270px;top:-18px;font-size:20px;color:var(--ink2)">checkout-api &nbsp;v2.41 → v2.40</div>
+        <div class="l" style="left:-270px;top:66px;font-size:17px;color:var(--ink3)">Needs your approval</div>
+        <div class="c pill" style="left:45px;top:66px;width:130px;height:60px;box-shadow:0 0 0 1px #DAD7D2;font-size:21px;font-weight:500;color:var(--ink2)">Cancel</div>
+        <div id="apBtn" class="c pill" style="left:205px;top:66px;width:170px;height:60px;background:var(--blue);color:#fff;font-size:21px;font-weight:560">
+          <span id="apA" class="c" style="left:50%;top:50%">Approve</span>
+          <span id="apB" class="c" style="left:50%;top:50%;display:flex;align-items:center;gap:9px"><svg id="spin2" class="ic" viewBox="0 0 24 24" style="width:20px;height:20px"><circle cx="12" cy="12" r="9" stroke-opacity=".3"/><path d="M12 3 a9 9 0 0 1 9 9"/></svg>Rolling back</span>
+        </div>
+      </div>
+
+      <div class="layer" id="L_toast">
+        <div class="c" style="left:-290px;top:0;width:36px;height:36px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center">
+          <svg class="ic" viewBox="0 0 24 24" style="width:20px;height:20px;color:#fff;stroke-width:2.4"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        </div>
+        <div class="l" style="left:-256px;top:0;font-size:25px"><span class="mono" style="font-weight:520">checkout-api</span> recovered <span style="color:var(--ink3)">·</span> <span class="mono" style="color:var(--ink2)">p95 <span id="toastMs">180</span>ms</span></div>
+      </div>
+
+    </div></div>
+
+    <!-- satellites in front of the blob: toggle knob / tab indicator + tab labels -->
+    <div id="sat">
+      <div id="knob" style="position:absolute"></div>
+      <div id="tabLbls"></div>
+    </div>
+  </div>
+
+  <svg id="cursor" viewBox="0 0 34 34">
+    <path d="M4 3 L4 27 L10.2 21.4 L14.4 30.6 L18.6 28.8 L14.5 19.8 L22.8 19.8 Z" fill="#0E0E0F" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+  </svg>
+</div>
+
+<script>
+"use strict";
+// ---------------------------------------------------------------------------
+// Time base. The render script can inject the measured grid via window.GRID.
+// ---------------------------------------------------------------------------
+const P = (window.GRID && window.GRID.period) || 0.5;   // seconds per beat
+const TT = 28 * P;                                       // loop length
+const bt = (bar, beat, frac = 0) => ((bar - 1) * 4 + (beat - 1) + frac) * P;
+const $ = id => document.getElementById(id);
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, k) => a + (b - a) * k;
+
+// Closed-form step response of a damped spring (0 -> 1).
+function S(x, w, z) {
+  if (x <= 0) return 0;
+  if (z >= 1) return 1 - Math.exp(-w * x) * (1 + w * x);
+  const wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * x) * (Math.cos(wd * x) + (z * w / wd) * Math.sin(wd * x));
+}
+// A value that changes target many times = sum of one spring per change.
+// The previous cycle's springs are summed too, so the loop is continuous.
+function Track(keys, w = 20, z = 0.85) {
+  const ks = keys.map(k => ({ t: k[0], v: k[1], w: k[2] || w, z: k[3] || z }));
+  const v0 = ks[ks.length - 1].v;
+  let prev = v0;
+  for (const k of ks) { k.d = k.v - prev; prev = k.v; }
+  const f = t => {
+    let v = v0;
+    for (const k of ks) if (k.d) v += k.d * (S(t - k.t, k.w, k.z) + S(t + TT - k.t, k.w, k.z));
+    return v;
+  };
+  f.keys = ks;
+  return f;
+}
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+function ColorTrack(keys, w = 18, z = 1) {
+  const ch = [0, 1, 2].map(c => Track(keys.map(k => [k[0], hex(k[1])[c], k[2] || w, k[3] || z])));
+  return t => `rgb(${ch.map(f => Math.round(clamp(f(t), 0, 255))).join(",")})`;
+}
+// Spring response with initial velocity (used when a drag is released).
+function release(x0, v0, target, tau, w, z) {
+  if (tau <= 0) return x0;
+  const A = x0 - target, wd = w * Math.sqrt(1 - z * z);
+  const B = (v0 + z * w * A) / wd;
+  return target + Math.exp(-z * w * tau) * (A * Math.cos(wd * tau) + B * Math.sin(wd * tau));
+}
+// Content enter / exit envelope for a window [tin, tout]; wraps across the loop.
+function env1(t, tin, tout, din) {
+  const a = S(t - tin - din, 24, 1), e = S(t - tout, 38, 1);
+  return { o: a * (1 - e), blur: 9 * (1 - a) + 7 * e, y: 10 * (1 - a) - 5 * e };
+}
+function envelope(t, tin, tout, din = 0.09) {
+  const A = env1(t, tin, tout, din), B = env1(t + TT, tin, tout, din);
+  return A.o >= B.o ? A : B;
+}
+function applyEnv(el, e, extra = "") {
+  if (e.o < 0.002) { el.style.display = "none"; return false; }
+  el.style.display = "";
+  el.style.opacity = e.o.toFixed(4);
+  el.style.filter = e.blur > 0.05 ? `blur(${e.blur.toFixed(2)}px)` : "none";
+  el.style.transform = `translate(0px, ${e.y.toFixed(2)}px) ${extra}`;
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// Timeline (bar.beat). Every change lands on the grid.
+// ---------------------------------------------------------------------------
+const T = {
+  alert: bt(1, 1), invClick: bt(1, 2), loader: bt(1, 3), list: bt(1, 4),
+  h0: bt(2, 1), h1: bt(2, 2), h2: bt(2, 3), node: bt(2, 4),
+  edges: bt(3, 1), red: bt(3, 2), nodeClick: bt(3, 3), grab: bt(3, 4),
+  x39: bt(4, 1), x40: bt(4, 1, .5), x41: bt(4, 2), releaseT: bt(4, 3), chip: bt(4, 3, .25), rca: bt(4, 4),
+  conf: bt(5, 1), toggle: bt(5, 2), tabs: bt(5, 3), metrics: bt(5, 4),
+  hover: bt(6, 1), cmdk: bt(6, 2), type0: bt(6, 3), enter: bt(7, 1), approve: bt(7, 2),
+  toast: bt(7, 3), word: bt(7, 4),
+};
+const QUERY = "rollback";
+const typeT = i => T.type0 + i * P / 4;              // 16th notes
+
+// Blob: size, radius, colour, centre, camera -------------------------------
+const BW = 22, BZ = 0.82;                             // tiny overshoot (~1%)
+const states = [
+  // t,        w,    h,   r,  cam,  bx
+  [T.alert,    640,  84,  42, 1.72, 0],
+  [T.invClick, 260,  84,  42, 2.0,  222],
+  [T.loader,   400,  84,  42, 1.95, 222],
+  [T.list,     780,  420, 32, 1.38, 0],
+  [T.node,     300,  88,  44, 1.12, 0],
+  [T.nodeClick,1000, 330, 32, 1.2,  0],
+  [T.chip,     460,  84,  42, 1.6,  0],
+  [T.rca,      840,  540, 32, 1.4,  0],
+  [T.tabs,     920,  660, 32, 1.3,  0],
+  [T.cmdk,     760,  420, 26, 1.4,  0],
+  [T.enter,    640,  250, 30, 1.6,  0],
+  [T.toast,    660,  92,  46, 1.7,  0],
+  [T.word,     300,  76,  38, 2.1,  0],
+];
+const bW = Track(states.map(s => [s[0], s[1]]), BW, BZ);
+const bH = Track(states.map(s => [s[0], s[2]]), BW, BZ);
+const bR = Track(states.map(s => [s[0], s[3]]), BW, 1);
+const bX = Track(states.map(s => [s[0], s[5]]), 16, 0.9);
+const cam = Track(states.map(s => [s[0] + 0.03, s[4]]), 12, 0.96);   // camera trails the element
+const camX = Track(states.map(s => [s[0] + 0.03, s[5]]), 13, 0.96);
+const camOf = t0 => { let s = states[states.length - 1]; for (const st of states) if (st[0] <= t0 + 1e-9) s = st; return { k: s[4], x: s[5] }; };
+const bCol = ColorTrack([
+  [T.alert, "#FFFFFF"], [T.invClick, "#0E0E0F"], [T.list, "#FFFFFF"],
+  [T.red, "#E5484D", 16, 1], [T.nodeClick, "#FFFFFF", 20, 1],        // red springs back, never snaps
+  [T.word, "#FFFFFF"],
+], 22, 1);
+const nodeTextCol = ColorTrack([[T.red, "#FFFFFF", 16, 1], [T.nodeClick, "#0E0E0F", 20, 1]]);
+
+// Cursor (screen space) ------------------------------------------------------
+const toScreen = (x, y, t0) => { const c = camOf(t0); return [720 + (x - c.x) * c.k, 720 + y * c.k]; };
+const REST = [1000, 990];
+const TL = { x0: -330, x1: 500, t0: T.grab + 0.05, t1: bt(4, 2, .96) };
+const smoother = u => { u = clamp(u, 0, 1); return u * u * u * (u * (u * 6 - 15) + 10); };
+const dragX = t => lerp(TL.x0, TL.x1, smoother((t - TL.t0) / (TL.t1 - TL.t0)));   // the hand, in stage units
+// marker positions are where the hand is on the 8th notes, so ticks sit on the grid
+const MARK = [
+  { v: "v2.38", tm: "10:12", x: TL.x0 },
+  { v: "v2.39", tm: "11:40", x: dragX(T.x39) },
+  { v: "v2.40", tm: "13:05", x: dragX(T.x40) },
+  { v: "v2.41", tm: "13:58", x: dragX(T.x41) },
+];
+const X41 = MARK[3].x;
+const TL_Y = 20, TL_CAM = 1.2;
+
+// chart data (deterministic)
+const CH = { x0: -360, x1: 420, yb: 240, yt: -180, max: 2500, n: 61, dep: 43, peak: 47 };
+const hash = i => { const s = Math.sin(i * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+const DATA = Array.from({ length: CH.n }, (_, i) => {
+  if (i < 44) return 172 + 34 * hash(i) + 10 * Math.sin(i * 0.7);
+  if (i === 44) return 760; if (i === 45) return 1620; if (i === 46) return 2240; if (i === 47) return 2410;
+  return 2150 + 190 * hash(i);
+});
+const cx = i => CH.x0 + (CH.x1 - CH.x0) * i / (CH.n - 1);
+const cy = v => CH.yb - (CH.yb - CH.yt) * v / CH.max;
+const PEAK = [cx(CH.peak), cy(DATA[CH.peak])];
+
+const SPIKE_OFF_Y = 0;    // chart svg shares the card's coordinate space
+const cur = [
+  // t, [x,y] screen,  w, z
+  [T.alert + 0.02, toScreen(222, 8, T.alert), 13, 0.95],
+  [T.invClick + 0.12, [1160, 880], 8, 1],
+  [T.list - 0.2, [1300, 1130], 8, 1],
+  [T.node + 0.2, toScreen(96, 12, T.node), 9, 0.95],
+  [T.nodeClick + 0.1, toScreen(TL.x0, TL_Y + 6, T.nodeClick), 16, 0.95],
+  [TL.t0, toScreen(TL.x1, TL_Y + 6, T.nodeClick), 6, 1],     // hidden: keeps the spring where the hand ends up
+  [T.releaseT + 0.1, [1200, 1130], 7, 1],
+  [T.conf + 0.05, toScreen(330, 204, T.rca), 14, 0.95],
+  [T.toggle + 0.12, toScreen(70, -262, T.tabs), 10, 0.95],
+  [T.metrics + 0.12, toScreen(PEAK[0], PEAK[1] + 2, T.tabs), 14, 0.95],
+  [T.cmdk + 0.05, [1190, 1150], 7, 1],
+  [T.enter + 0.02, toScreen(205, 72, T.enter), 11, 0.95],
+  [T.approve + 0.12, REST, 8, 1],
+];
+const curX = Track(cur.map(k => [k[0], k[1][0], k[2], k[3]]));
+const curY = Track(cur.map(k => [k[0], k[1][1], k[2], k[3]]));
+const presses = [[T.invClick, 0.09], [T.nodeClick, 0.09], [T.grab, T.releaseT - T.grab], [T.toggle, 0.09], [T.metrics, 0.09], [T.approve, 0.09]];
+const press = Track(presses.flatMap(([t, d]) => [[t - 0.02, 0.84, 40, 0.7], [t + d, 1, 30, 0.7]]).concat([[TT - 0.001, 1]]));
+function cursorAt(t) {
+  let x = curX(t), y = curY(t);
+  // direct manipulation: while held, the hand is the drag curve
+  if (t >= T.grab - 0.12 && t < T.releaseT + 0.3) {
+    const [sx] = toScreen(dragX(t), 0, T.nodeClick);
+    const k = t < T.grab ? smoother((t - T.grab + 0.12) / 0.12) : t < T.releaseT ? 1 : 1 - S(t - T.releaseT, 30, 1);
+    x = lerp(x, sx, k); y = lerp(y, toScreen(0, TL_Y + 6, T.nodeClick)[1], k);
+  }
+  return [x, y];
+}
+// scrubber edges: direct manipulation while held, spring back from wherever on release
+function scrubEdges(t) {
+  const held = h => {
+    const cxS = dragX(h);
+    if (cxS <= X41) return [cxS - 14, cxS + 14];
+    const over = cxS - X41;
+    return [X41 - 14 + over * 0.14, X41 + 14 + over * 0.62];   // stretches past the latest deploy
+  };
+  if (t < TL.t0) return [TL.x0 - 14, TL.x0 + 14];
+  if (t < T.releaseT) return held(t);
+  const e0 = held(T.releaseT), e1 = held(T.releaseT - 1e-3);
+  const v = [(e0[0] - e1[0]) / 1e-3, (e0[1] - e1[1]) / 1e-3];
+  const tau = t - T.releaseT;
+  return [release(e0[0], v[0], X41 - 14, tau, 16, 0.62), release(e0[1], v[1], X41 + 14, tau, 22, 0.62)];
+}
+
+// knob -> tab indicator: two edges on different springs, leading edge faster
+const KN = { y: 198, off: 316, on: 344, r: 14 };
+const TABS = [{ n: "Metrics", l: 4, r: 136 }, { n: "Logs", l: 142, r: 278 }, { n: "Traces", l: 284, r: 416 }];
+const TAB_Y = -266;
+const FAST = 26, SLOW = 11;
+const kL = Track([[T.rca, KN.off - KN.r], [T.toggle + 0.02, KN.on - KN.r, SLOW, 0.8], [T.tabs, TABS[2].l, SLOW, 0.8], [T.metrics + 0.03, TABS[0].l, FAST, 0.8], [T.word, KN.off - KN.r]]);
+const kR = Track([[T.rca, KN.off + KN.r], [T.toggle + 0.02, KN.on + KN.r, FAST, 0.8], [T.tabs, TABS[2].r, FAST, 0.8], [T.metrics + 0.03, TABS[0].r, SLOW, 0.8], [T.word, KN.off + KN.r]]);
+const kT = Track([[T.rca, KN.y - KN.r], [T.tabs, TAB_Y - 24, 14, 0.82], [T.word, KN.y - KN.r]]);
+const kB = Track([[T.rca, KN.y + KN.r], [T.tabs, TAB_Y + 24, 20, 0.82], [T.word, KN.y + KN.r]]);
+const kRad = Track([[T.rca, 14], [T.tabs, 24, 18, 1], [T.word, 14]]);
+const kCol = ColorTrack([[T.rca, "#FFFFFF"], [T.tabs, "#0E0E0F", 16, 1], [T.word, "#FFFFFF"]]);
+const togCol = ColorTrack([[T.rca, "#D8D5D0"], [T.toggle, "#2F6BFF", 22, 1], [T.word, "#D8D5D0"]]);
+
+// command palette ranking, recomputed per typed character
+const ITEMS = [
+  { label: "Summarize incident", hint: "INC-2291", icon: '<path d="M7 4h7l4 4v12H7z"/><path d="M14 4v4h4M10 13h5M10 16.5h5"/>' },
+  { label: "Show recent deploys", hint: "checkout-api", icon: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/>' },
+  { label: "Open runbook", hint: "checkout-api", icon: '<path d="M5 5.5A1.5 1.5 0 0 1 6.5 4H19v14H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/>' },
+  { label: "Rollback checkout-api", hint: "→ v2.40", icon: '<path d="M4 9h11a5 5 0 0 1 0 10H9"/><path d="M8 5L4 9l4 4"/>' },
+];
+function score(item, q) {
+  if (!q) return 0;
+  let best = 0;
+  for (const w of item.label.toLowerCase().split(/[\s-]+/)) { let k = 0; while (k < q.length && w[k] === q[k]) k++; best = Math.max(best, k); }
+  return best;
+}
+const rankFor = q => { const order = ITEMS.map((it, i) => ({ i, s: score(it, q) })).sort((a, b) => b.s - a.s || a.i - b.i); const r = []; order.forEach((o, k) => r[o.i] = k); return r; };
+const ROW0 = -62, ROWH = 64;
+const rowY = ITEMS.map((_, i) => {
+  const keys = [[T.cmdk, ROW0 + i * ROWH]];
+  for (let c = 1; c <= QUERY.length; c++) keys.push([typeT(c - 1), ROW0 + rankFor(QUERY.slice(0, c))[i] * ROWH, 17, 0.84]);
+  keys.push([T.word, ROW0 + i * ROWH]);
+  return Track(keys);
+});
+
+// hypothesis rows
+const HYP = [
+  { name: "Traffic spike", ev: "rps +3%", t: T.h0, ok: false, y: -55 },
+  { name: "Pod OOMKilled", ev: "0 restarts", t: T.h1, ok: false, y: 35 },
+  { name: "Bad deploy", ev: "v2.41 · 13:58", t: T.h2, ok: true, y: 125 },
+];
+const ICON_X = '<path d="M7 7l10 10M17 7L7 17"/>', ICON_OK = '<path d="M5 12.5l4.5 4.5L19 7.5"/>';
+const SPIN = '<circle cx="12" cy="12" r="9" stroke-opacity=".22"/><path d="M12 3 a9 9 0 0 1 9 9"/>';
+const poolY = Track([[T.chip, 0], [T.rca, -26, BW, BZ], [T.word, 0]]);
+const okRowY = Track([[T.list, 125], [T.node, 0, 18, 0.9], [T.word, 125]]);
+
+// UI sound cues: [time, name]. The mixer places each sound by its measured peak.
+const CUES = [
+  [T.alert, "ping"], [T.invClick, "click"], [T.list, "tick"],
+  [T.h0, "tick"], [T.h1, "tick"], [T.h2, "success"],
+  [T.edges, "tick"], [T.red, "thud"], [T.nodeClick, "click"], [T.grab, "press"],
+  [T.x39, "detent"], [T.x40, "detent"], [T.x41, "detent"], [T.releaseT, "release"],
+  [T.conf, "tick"], [T.toggle, "toggle"], [T.metrics, "click"], [T.cmdk, "key"],
+  ...Array.from(QUERY, (_, i) => [typeT(i), "key"]),
+  [T.enter, "enter"], [T.approve, "click"], [T.toast, "success"], [T.word, "tick"],
+];
+
+// ---------------------------------------------------------------------------
+// one-time DOM construction (static layout only; no animation state)
+// ---------------------------------------------------------------------------
+HYP.forEach((h, i) => {
+  $("row" + i).innerHTML =
+    (h.ok ? `<div class="hbg" style="position:absolute;left:-372px;top:-34px;height:68px;border-radius:14px;background:#EEF3FF;width:0"></div>` : "") +
+    `<svg class="c ic hic" viewBox="0 0 24 24" style="left:-335px;top:0">${SPIN}</svg>` +
+    `<svg class="c ic hres" viewBox="0 0 24 24" style="left:-335px;top:0;color:${h.ok ? "var(--blue)" : "var(--ink3)"};stroke-width:2.2">${h.ok ? ICON_OK : ICON_X}</svg>` +
+    `<div class="l hname" style="left:-300px;top:0;font-size:24px;font-weight:520">${h.name}</div>` +
+    `<div class="hstrike" style="position:absolute;left:-300px;top:1px;height:2px;background:var(--ink3);width:0"></div>` +
+    `<div class="r mono hev" style="left:350px;top:0;font-size:20px;color:var(--ink2)">${h.ev}</div>`;
+});
+$("tlMarks").innerHTML = MARK.map((m, i) =>
+  `<div class="c mk" style="left:${m.x}px;top:${TL_Y + 1}px;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px #B3B0AA"></div>` +
+  `<div class="c mono mkl" style="left:${m.x}px;top:${TL_Y + 58}px;font-size:19px;color:var(--ink2)">${m.v}</div>` +
+  `<div class="c mono" style="left:${m.x}px;top:${TL_Y + 86}px;font-size:15px;color:var(--ink3)">${m.tm}</div>`).join("");
+$("tlBase").style.left = (TL.x0 - 70) + "px"; $("tlBase").style.width = (X41 + 70 - (TL.x0 - 70)) + "px";
+$("palRows").innerHTML = ITEMS.map((it, i) =>
+  `<div class="prow" id="pr${i}" style="position:absolute;left:0;top:0">` +
+  `<svg class="c ic" viewBox="0 0 24 24" style="left:-345px;top:0;color:var(--ink2)">${it.icon}</svg>` +
+  `<div class="l plbl" style="left:-318px;top:0;font-size:22px"></div>` +
+  `<div class="r mono" style="left:350px;top:0;font-size:17px;color:var(--ink3)">${it.hint}</div></div>`).join("");
+$("tabLbls").innerHTML = TABS.map((tb, i) => `<div class="c tlbl" id="tl${i}" style="left:${(tb.l + tb.r) / 2}px;top:${TAB_Y}px;font-size:21px;font-weight:540">${tb.n}</div>`).join("");
+(function buildChart() {
+  const g = $("grid");
+  let s = "";
+  for (const [v, lbl] of [[0, "0"], [1000, "1.0s"], [2000, "2.0s"]]) {
+    s += `<line x1="${CH.x0}" x2="${CH.x1}" y1="${cy(v)}" y2="${cy(v)}" stroke="#E6E3DE" stroke-width="1.5"/>`;
+    s += `<text x="-420" y="${cy(v) + 5}">${lbl}</text>`;
+  }
+  ["13:15", "13:30", "13:45", "14:00", "14:15"].forEach((l, i) => s += `<text x="${cx(i * 15)}" y="${CH.yb + 36}" text-anchor="middle">${l}</text>`);
+  g.innerHTML = s;
+  const dx = cx(CH.dep);
+  $("depLine").setAttribute("x1", dx); $("depLine").setAttribute("x2", dx);
+  $("depLine").setAttribute("y1", CH.yt - 6); $("depLine").setAttribute("y2", CH.yb);
+  $("depLbl").setAttribute("x", dx - 10); $("depLbl").setAttribute("y", CH.yt + 8);
+  $("line").setAttribute("d", DATA.map((v, i) => (i ? "L" : "M") + cx(i).toFixed(1) + " " + cy(v).toFixed(1)).join(" "));
+  $("tipX").setAttribute("x1", PEAK[0]); $("tipX").setAttribute("x2", PEAK[0]);
+  $("tipX").setAttribute("y1", CH.yt - 6); $("tipX").setAttribute("y2", CH.yb);
+  $("tipDot").setAttribute("cx", PEAK[0]); $("tipDot").setAttribute("cy", PEAK[1]);
+})();
+const LEN = { line: $("line").getTotalLength(), e1: $("e1").getTotalLength(), e2: $("e2").getTotalLength() };
+const cache = new Map();
+const setHTML = (el, html) => { if (cache.get(el) !== html) { el.innerHTML = html; cache.set(el, html); } };
+
+// ---------------------------------------------------------------------------
+// seek(t): every style is a pure function of t.
+// ---------------------------------------------------------------------------
+function seek(tIn) {
+  const t = ((tIn % TT) + TT) % TT;
+  const px = v => v.toFixed(3) + "px";
+
+  // camera + blob
+  const k = cam(t) * (1 + 0.01 * Math.sin(4 * Math.PI * t / TT)), kx = camX(t);   // slow breathe, loop-safe
+  $("stage").style.transform = `translate(${px(720 - kx * k)}, 720px) scale(${k.toFixed(5)})`;
+  const w = bW(t), h = bH(t), bx = bX(t);
+  const blob = $("blob").style;
+  blob.left = px(bx - w / 2); blob.top = px(-h / 2); blob.width = px(w); blob.height = px(h);
+  blob.borderRadius = px(Math.min(bR(t), h / 2)); blob.background = bCol(t);
+  $("satBack").style.left = px(bx);
+  $("sat").style.left = px(bx);
+
+  // simple layers
+  const L = (id, a, b, din) => applyEnv($(id), envelope(t, a, b, din));
+  L("L_word", T.word, TT + T.alert);
+  if (L("L_alert", T.alert, T.invClick)) {
+    const p = press(t); $("invBtn").style.transform = `translate(-50%,-50%) scale(${lerp(1, p, 0.4).toFixed(4)})`;
+  }
+  L("L_button", T.invClick, T.loader, 0.05);
+  if (L("L_loader", T.loader, T.list)) {
+    $("spin1").style.transform = `translate(-50%,-50%) rotate(${(t * 400) % 360}deg)`;
+    $("dots").textContent = "…";
+  }
+  L("L_list", T.list, T.node);
+  HYP.forEach((hy, i) => {
+    const el = $("row" + i);
+    const out = hy.ok ? T.node + 0.12 : T.node;
+    const e = envelope(t, T.list + 0.04 * i, out, 0.12);
+    const y = hy.ok ? okRowY(t) : hy.y;
+    if (!applyEnv(el, e, `translate(0px, ${px(y)})`)) return;
+    const r = S(t - hy.t, 26, 1);                               // resolve on the beat
+    const [spin, res] = el.querySelectorAll("svg");
+    spin.style.opacity = (1 - r).toFixed(3); spin.style.filter = r > 0.02 ? `blur(${(r * 6).toFixed(2)}px)` : "none";
+    spin.style.transform = `translate(-50%,-50%) rotate(${(t * 420) % 360}deg)`;
+    res.style.opacity = r.toFixed(3);
+    res.style.transform = `translate(-50%,-50%) scale(${lerp(0.6, 1, S(t - hy.t, 24, 0.7)).toFixed(4)})`;
+    const nm = el.querySelector(".hname"), st = el.querySelector(".hstrike"), ev = el.querySelector(".hev");
+    if (hy.ok) {
+      ev.style.color = r > 0.5 ? "var(--blue)" : "var(--ink2)";
+      el.querySelector(".hbg").style.width = px(744 * S(t - hy.t - 0.05, 11, 0.9));   // highlight sweeps in after the check
+    }
+    else {
+      const g = Math.round(lerp(14, 154, r)); nm.style.color = `rgb(${g},${g - 2},${g - 6})`;
+      st.style.width = px(nm.offsetWidth * S(t - hy.t - 0.04, 20, 1));
+    }
+  });
+
+  // topology
+  if (L("L_node", T.node, T.nodeClick, 0.14)) $("nodeText").style.color = nodeTextCol(t);
+  const dE = [S(t - T.edges, 9, 1), S(t - T.edges - 0.08, 9, 1)];
+  const unE = S(t - T.nodeClick, 30, 1);
+  ["e1", "e2"].forEach((id, i) => {
+    const Lg = LEN[id], f = dE[i] * (1 - unE);
+    const el = $(id);
+    el.style.display = f < 0.002 ? "none" : "";
+    el.setAttribute("stroke-dasharray", `${Lg} ${Lg}`);
+    el.setAttribute("stroke-dashoffset", (Lg * (1 - f)).toFixed(2));
+  });
+  ["n1", "n2"].forEach((id, i) => {
+    const e = envelope(t, T.edges + 0.14 + 0.08 * i, T.nodeClick, 0);
+    applyEnv($(id), e, `translate(-50%,-50%) scale(${lerp(0.7, 1, S(t - T.edges - 0.14 - 0.08 * i, 20, 0.8)).toFixed(4)})`);
+  });
+  applyEnv($("nLabel"), envelope(t, T.red, T.nodeClick, 0.04), "translate(-50%,-50%)");
+
+  // deploy timeline + scrubber
+  if (L("L_tl", T.nodeClick, T.chip)) {
+    const [l, r] = scrubEdges(t);
+    const s = $("scrub").style; s.left = px(l); s.width = px(r - l);
+    const c = (l + r) / 2;
+    $("tlProg").style.left = px(TL.x0 - 70); $("tlProg").style.width = px(Math.max(0, Math.min(c, X41) - (TL.x0 - 70)));
+    const mks = $("tlMarks").querySelectorAll(".mk"), lbls = $("tlMarks").querySelectorAll(".mkl");
+    MARK.forEach((m, i) => {
+      const passed = i === 0 ? t >= T.grab : t >= [0, T.x39, T.x40, T.x41][i];
+      const tp = i === 0 ? T.grab : [0, T.x39, T.x40, T.x41][i];
+      const pop = passed ? lerp(1.5, 1, S(t - tp, 18, 0.7)) : 1;
+      mks[i].style.transform = `translate(-50%,-50%) scale(${pop.toFixed(4)})`;
+      mks[i].style.boxShadow = passed ? "0 0 0 2px #0E0E0F" : "0 0 0 2px #B3B0AA";
+      const sel = i === 3 && t >= T.releaseT;
+      lbls[i].style.color = sel ? "var(--ink)" : (passed ? "var(--ink)" : "var(--ink2)");
+      lbls[i].style.fontWeight = sel ? "620" : "400";
+    });
+  }
+  L("L_chip", T.chip, T.rca, 0.04);
+  if (L("L_pool", T.chip, T.tabs, 0.04)) $("poolTxt").style.top = px(poolY(t));
+
+  // RCA card
+  if (L("L_rca", T.rca, T.tabs)) {
+    const f = S(t - T.rca - 0.1, 7.5, 1);
+    $("confBar").style.width = px(520 * 0.94 * f);
+    $("confVal").textContent = Math.round(94 * f) + "%";
+    $("togTrack").style.background = togCol(t);
+  }
+  // knob / tab indicator (one element)
+  {
+    const e = envelope(t, T.rca, T.cmdk, 0.12);
+    const kn = $("knob");
+    if (applyEnv(kn, e)) {
+      const l = kL(t), r = kR(t), tp = kT(t), b = kB(t);
+      Object.assign(kn.style, { left: px(l), top: px(tp), width: px(r - l), height: px(b - tp), borderRadius: px(kRad(t)), background: kCol(t) });
+      const sh = 1 - S(t - T.tabs, 16, 1);
+      kn.style.boxShadow = `0 1px 3px rgba(0,0,0,${(0.22 * sh).toFixed(3)}), 0 0 0 ${(0.5 * sh).toFixed(2)}px rgba(0,0,0,.08)`;
+      // tab labels: white where the indicator covers them
+      const le = envelope(t, T.tabs, T.cmdk, 0.1);
+      applyEnv($("tabLbls"), le);
+      TABS.forEach((tb, i) => {
+        const cov = clamp((Math.min(r, tb.r) - Math.max(l, tb.l)) / (tb.r - tb.l), 0, 1) * clamp((b - tp - 20) / 28, 0, 1);
+        const g = Math.round(lerp(110, 255, cov));
+        $("tl" + i).style.color = `rgb(${g},${g - (cov > 0.5 ? 0 : 2)},${g - (cov > 0.5 ? 0 : 6)})`;
+      });
+    } else $("tabLbls").style.display = "none";
+  }
+  L("L_tabs", T.tabs, T.cmdk);
+  if (L("L_chart", T.metrics, T.cmdk, 0.02)) {
+    const f = S(t - T.metrics - 0.04, 8, 1);
+    $("line").setAttribute("stroke-dasharray", `${LEN.line} ${LEN.line}`);
+    $("line").setAttribute("stroke-dashoffset", (LEN.line * (1 - f)).toFixed(2));
+    const d = S(t - T.metrics - 0.18, 14, 1);
+    $("depLine").style.opacity = $("depLbl").style.opacity = d.toFixed(3);
+    const tip = S(t - T.hover, 26, 0.85), tipO = clamp(S(t - T.hover, 30, 1), 0, 1);
+    $("tip").style.opacity = tipO.toFixed(3);
+    const tb = $("tipBox").style;
+    tb.left = px(PEAK[0] - 20); tb.top = px(PEAK[1] + SPIKE_OFF_Y + 92);   // below-left of the spike, clear of labels
+    tb.opacity = tipO.toFixed(3);
+    tb.transform = `translate(-100%,-50%) translate(${px(8 * (1 - tip))},0) scale(${lerp(0.94, 1, tip).toFixed(4)})`;
+    tb.filter = tipO < 0.98 ? `blur(${(4 * (1 - tipO)).toFixed(2)}px)` : "none";
+  }
+
+  // command palette
+  if (L("L_pal", T.cmdk, T.enter)) {
+    let n = 0; for (let i = 0; i < QUERY.length; i++) if (t >= typeT(i)) n++;
+    const q = QUERY.slice(0, n);
+    const caretOn = n > 0 && n < QUERY.length ? true : Math.floor(t / (P / 2)) % 2 === 0;
+    const caret = `<span style="display:inline-block;width:2px;height:30px;vertical-align:-6px;margin-left:1px;background:${caretOn ? "var(--blue)" : "transparent"}"></span>`;
+    setHTML($("palText"), q ? `<span>${q}</span>${caret}` : `${caret}<span style="color:var(--ink3)">Ask Scoutflo…</span>`);
+    ITEMS.forEach((it, i) => {
+      const row = $("pr" + i);
+      row.style.transform = `translate(0px, ${px(rowY[i](t))})`;
+      const sc = score(it, q), dim = q && sc < q.length;
+      row.style.opacity = dim ? "0.38" : "1";
+      let html = it.label;
+      if (q && !dim) {
+        const words = it.label.split(/(\s+|-)/); let done = false;
+        html = words.map(wd => { if (!done && wd.toLowerCase().startsWith(q)) { done = true; return `<b style="font-weight:640">${wd.slice(0, q.length)}</b>${wd.slice(q.length)}`; } return wd; }).join("");
+      }
+      setHTML(row.querySelector(".plbl"), html);
+    });
+  }
+
+  // approve
+  if (L("L_conf", T.enter, T.toast)) {
+    const p = press(t);
+    $("apBtn").style.transform = `translate(-50%,-50%) scale(${lerp(1, p, 0.35).toFixed(4)})`;
+    const sw = S(t - T.approve - 0.06, 28, 1);
+    $("apA").style.opacity = (1 - sw).toFixed(3); $("apA").style.filter = sw > 0.02 && sw < 0.98 ? `blur(${(6 * sw).toFixed(2)}px)` : "none";
+    $("apB").style.opacity = sw.toFixed(3); $("apB").style.display = sw < 0.002 ? "none" : "flex";
+    $("spin2").style.transform = `rotate(${(t * 420) % 360}deg)`;
+  }
+  if (L("L_toast", T.toast, T.word)) {
+    const f = S(t - T.toast - 0.03, 24, 1);
+    $("toastMs").textContent = Math.round(lerp(2410, 180, f)).toLocaleString("en-US");
+  }
+
+  // cursor
+  const [cxS, cyS] = cursorAt(t);
+  const cs = $("cursor").style;
+  cs.transform = `translate(${px(cxS - 4)}, ${px(cyS - 4)}) scale(${press(t).toFixed(4)})`;
+}
+
+window.seek = seek;
+window.DUR = TT;
+window.CUES = CUES.map(([t, n]) => [+t.toFixed(6), n]);
+window.PERIOD = P;
+window.ready = document.fonts.ready.then(() => { seek(0); return true; });
+
+// preview: ?t=3.5 to hold a frame, ?play to loop in real time
+const qs = new URLSearchParams(location.search);
+if (qs.has("t")) window.ready.then(() => seek(parseFloat(qs.get("t"))));
+else if (qs.has("play")) { const t0 = performance.now(); const f = () => { seek((performance.now() - t0) / 1000); requestAnimationFrame(f); }; window.ready.then(f); }
+</script>
+</body>
+</html>
