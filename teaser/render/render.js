@@ -22,7 +22,7 @@ async function openPage(browser) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1440 }, deviceScaleFactor: 1 });
   page.on("pageerror", e => { console.error("PAGE ERROR", e.message); process.exit(1); });
   page.on("console", m => { if (m.type() === "error") console.error("console:", m.text()); });
-  await page.addInitScript(g => { window.GRID = g; }, { period: grid.period });
+  await page.addInitScript(g => { window.GRID = g; }, { period: grid.period, beats: grid.beats_in_loop });
   await page.goto("file://" + path.join(ROOT, "index.html"));
   await page.evaluate(() => window.ready);
   return page;
@@ -47,13 +47,13 @@ async function main() {
     const dir = path.join(BUILD, "beats"); fs.mkdirSync(dir, { recursive: true });
     const page = await openPage(browser);
     const off = parseFloat(arg || "0.6");
-    for (let b = 0; b < 28; b++) {
+    for (let b = 0; b < grid.beats_in_loop; b++) {
       const t = (b + off) * grid.period;
       const bar = Math.floor(b / 4) + 1, bb = (b % 4) + 1;
       fs.writeFileSync(path.join(dir, `beat_${String(b).padStart(2, "0")}_${bar}.${bb}.png`), await shot(page, t));
     }
     const list = fs.readdirSync(dir).filter(f => f.startsWith("beat_")).sort();
-    const sheet = await browser.newPage({ viewport: { width: 1440, height: 2520 } });
+    const sheet = await browser.newPage({ viewport: { width: 1440, height: Math.ceil(list.length / 4) * 360 } });
     await sheet.setContent(`<body style="margin:0;display:grid;grid-template-columns:repeat(4,360px);background:#000">` +
       list.map(f => `<div style="position:relative;width:360px;height:360px"><img src="data:image/png;base64,${fs.readFileSync(path.join(dir, f)).toString("base64")}" style="width:360px;height:360px;display:block">` +
         `<span style="position:absolute;left:8px;top:6px;font:600 20px monospace;background:#fff;padding:0 6px">${f.split("_")[2].replace(".png", "")}</span></div>`).join("") + `</body>`);

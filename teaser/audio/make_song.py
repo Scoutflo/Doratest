@@ -1,12 +1,13 @@
 """Synthesize an original, royalty-free 120 BPM track for the teaser.
 
-The arrangement is a 7-bar phrase (28 beats = 14 s) that is rendered three
+The arrangement is a 10-bar phrase (40 beats at 96 BPM = 25 s) that is rendered three
 times back to back, so the middle cycle carries the previous cycle's release
 tails and the loop seam is sample-continuous. analyze.py then finds the beat
 grid in this file exactly as it would in any third-party song.
 
 Harmony follows the story: Bm7 (alert) -> Gmaj7 -> Em7 -> A -> Bm7 -> Gmaj7
--> Dmaj9 (resolved, lands under the success toast), then back to Bm7.
+-> Em7 -> A -> Gmaj7 -> Dmaj9 (resolved, lands under the success toast),
+then back to Bm7.
 
 Usage: python3 make_song.py out.wav
 """
@@ -15,12 +16,9 @@ import numpy as np
 import soundfile as sf
 
 SR = 48000
-BPM = 120.0
+BPM = 96.0
 BEAT = 60.0 / BPM
-BARS = 7
-CYCLE = BARS * 4 * BEAT
 CYCLES = 3
-N = int(round(CYCLE * CYCLES * SR))
 rng = np.random.default_rng(7)
 
 
@@ -118,8 +116,14 @@ CHORDS = [
     (45, [61, 64, 69, 71]),   # A(add9): C# E A B
     (47, [62, 66, 69, 73]),   # Bm7
     (43, [62, 67, 71, 74]),   # Gmaj7 up
+    (40, [59, 62, 66, 67]),   # Em7
+    (45, [61, 64, 69, 71]),   # A(add9)
+    (43, [62, 66, 67, 71]),   # Gmaj7
     (38, [61, 64, 66, 69]),   # Dmaj9: C# E F# A
 ]
+BARS = len(CHORDS)
+CYCLE = BARS * 4 * BEAT
+N = int(round(CYCLE * CYCLES * SR))
 ARP = [0, 2, 1, 3, 2, 1, 3, 0]
 
 
@@ -149,8 +153,8 @@ def build():
                     add(keys, b0 + pos * BEAT + i * 0.006, epiano(midi(nn), BEAT * 0.8, v))
             for nn in voic[:3]:
                 add(pads, b0, pad(midi(nn - 12), 4 * BEAT - 0.2, 0.07))
-            # 16th arp in bars 3-6 (the investigation), sparse otherwise
-            if 2 <= bar <= 5:
+            # 16th arp from the topology through the typing, sparse otherwise
+            if 2 <= bar <= 7:
                 for s in range(16):
                     if s % 4 == 2 or s in (5, 11, 15):
                         nn = voic[ARP[s % 8]] + 12

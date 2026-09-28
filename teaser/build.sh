@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Full pipeline: song -> beat grid -> cues -> SFX mix -> beat check -> render -> encode.
 #   ./build.sh                 synthesize the original track
-#   SONG=path/to/song.mp3 AT=12 ./build.sh   use any ~120 BPM song; AT = approx loop start (s)
+#   SONG=path/to/song.mp3 AT=12 ./build.sh   use any ~96 BPM song; AT = approx loop start (s), BEATS = loop length
 set -euo pipefail
 cd "$(dirname "$0")"
 mkdir -p build
@@ -13,7 +13,7 @@ if [[ -n "${SONG:-}" ]]; then
 else
   python3 audio/make_song.py build/song.wav
 fi
-python3 audio/analyze.py build/song.wav --at "${AT:-14}" --out-wav build/loop.wav --out-json build/grid.json
+python3 audio/analyze.py build/song.wav --at "${AT:-25}" --beats "${BEATS:-40}" --out-wav build/loop.wav --out-json build/grid.json
 node render/render.js cues
 python3 audio/mix.py build/loop.wav build/cues.json build/mix.wav | tail -1
 node render/render.js beats            # build/beats_sheet.png: one frame per beat

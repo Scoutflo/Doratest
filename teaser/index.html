@@ -148,14 +148,15 @@ svg.ic { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-wid
         <div id="palText" class="l" style="left:-318px;top:-160px;font-size:27px"></div>
         <div class="c mono" style="left:338px;top:-160px;font-size:16px;color:var(--ink2);padding:5px 9px;border-radius:8px;box-shadow:0 0 0 1px #DDDAD5">⌘K</div>
         <div class="hair" style="left:-380px;width:760px;top:-116px"></div>
-        <div class="c" style="left:0;top:-62px;width:736px;height:58px;border-radius:14px;background:#F2F1EE"></div>
+        <div id="palSel" class="c" style="left:0;top:-62px;width:736px;height:58px;border-radius:14px;background:#F2F1EE"></div>
         <div id="palRows"></div>
       </div>
 
       <div class="layer" id="L_conf">
         <div class="l" style="left:-270px;top:-62px;font-size:31px;font-weight:620;letter-spacing:-0.02em">Approve rollback?</div>
         <div class="l mono" style="left:-270px;top:-18px;font-size:20px;color:var(--ink2)">checkout-api &nbsp;v2.41 → v2.40</div>
-        <div class="l" style="left:-270px;top:66px;font-size:17px;color:var(--ink3)">Needs your approval</div>
+        <div id="needA" class="l" style="left:-270px;top:66px;font-size:17px;color:var(--ink3)">Needs your approval</div>
+        <div id="needB" class="l" style="left:-270px;top:66px;font-size:17px;color:var(--ink2)">Approved by you</div>
         <div class="c pill" style="left:45px;top:66px;width:130px;height:60px;box-shadow:0 0 0 1px #DAD7D2;font-size:21px;font-weight:500;color:var(--ink2)">Cancel</div>
         <div id="apBtn" class="c pill" style="left:205px;top:66px;width:170px;height:60px;background:var(--blue);color:#fff;font-size:21px;font-weight:560">
           <span id="apA" class="c" style="left:50%;top:50%">Approve</span>
@@ -168,6 +169,9 @@ svg.ic { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-wid
           <svg class="ic" viewBox="0 0 24 24" style="width:20px;height:20px;color:#fff;stroke-width:2.4"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
         </div>
         <div class="l" style="left:-256px;top:0;font-size:25px"><span class="mono" style="font-weight:520">checkout-api</span> recovered <span style="color:var(--ink3)">·</span> <span class="mono" style="color:var(--ink2)">p95 <span id="toastMs">180</span>ms</span></div>
+      </div>
+      <div class="layer" id="L_toastSub">
+        <div class="l mono" style="left:-256px;top:26px;font-size:17px;color:var(--ink2)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);margin-right:10px;vertical-align:2px"></span>Ops Mode watching p95 · every 5m</div>
       </div>
 
     </div></div>
@@ -189,8 +193,9 @@ svg.ic { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-wid
 // ---------------------------------------------------------------------------
 // Time base. The render script can inject the measured grid via window.GRID.
 // ---------------------------------------------------------------------------
-const P = (window.GRID && window.GRID.period) || 0.5;   // seconds per beat
-const TT = 28 * P;                                       // loop length
+const P = (window.GRID && window.GRID.period) || 0.625; // seconds per beat (96 BPM)
+const BEATS = (window.GRID && window.GRID.beats) || 40;
+const TT = BEATS * P;                                    // loop length (10 bars = 25 s)
 const bt = (bar, beat, frac = 0) => ((bar - 1) * 4 + (beat - 1) + frac) * P;
 const $ = id => document.getElementById(id);
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
@@ -252,19 +257,21 @@ function applyEnv(el, e, extra = "") {
 // Timeline (bar.beat). Every change lands on the grid.
 // ---------------------------------------------------------------------------
 const T = {
-  alert: bt(1, 1), invClick: bt(1, 2), loader: bt(1, 3), list: bt(1, 4),
-  h0: bt(2, 1), h1: bt(2, 2), h2: bt(2, 3), node: bt(2, 4),
-  edges: bt(3, 1), red: bt(3, 2), nodeClick: bt(3, 3), grab: bt(3, 4),
-  x39: bt(4, 1), x40: bt(4, 1, .5), x41: bt(4, 2), releaseT: bt(4, 3), chip: bt(4, 3, .25), rca: bt(4, 4),
-  conf: bt(5, 1), toggle: bt(5, 2), tabs: bt(5, 3), metrics: bt(5, 4),
-  hover: bt(6, 1), cmdk: bt(6, 2), type0: bt(6, 3), enter: bt(7, 1), approve: bt(7, 2),
-  toast: bt(7, 3), word: bt(7, 4),
+  alert: bt(1, 1), invClick: bt(1, 3), loader: bt(1, 4),
+  list: bt(2, 1), h0: bt(2, 2), h1: bt(2, 3), h2: bt(2, 4),
+  node: bt(3, 2), edges: bt(3, 3), red: bt(3, 4),
+  nodeClick: bt(4, 2), grab: bt(4, 3), x39: bt(4, 4), x40: bt(5, 1), x41: bt(5, 2), releaseT: bt(5, 3), chip: bt(5, 4),
+  rca: bt(6, 1), conf: bt(6, 2), toggle: bt(6, 4),
+  tabs: bt(7, 1), metrics: bt(7, 2), hover: bt(7, 3),
+  cmdk: bt(8, 1), type0: bt(8, 2), ready: bt(8, 4),
+  enter: bt(9, 1), approve: bt(9, 3), approved: bt(9, 4),
+  toast: bt(10, 1), toastSub: bt(10, 3), word: bt(10, 4),
 };
 const QUERY = "rollback";
 const typeT = i => T.type0 + i * P / 4;              // 16th notes
 
 // Blob: size, radius, colour, centre, camera -------------------------------
-const BW = 22, BZ = 0.82;                             // tiny overshoot (~1%)
+const BW = 18, BZ = 0.82;                             // tiny overshoot (~1%)
 const states = [
   // t,        w,    h,   r,  cam,  bx
   [T.alert,    640,  84,  42, 1.72, 0],
@@ -279,14 +286,15 @@ const states = [
   [T.cmdk,     760,  420, 26, 1.4,  0],
   [T.enter,    640,  250, 30, 1.6,  0],
   [T.toast,    660,  92,  46, 1.7,  0],
+  [T.toastSub, 660,  136, 34, 1.65, 0],
   [T.word,     300,  76,  38, 2.1,  0],
 ];
 const bW = Track(states.map(s => [s[0], s[1]]), BW, BZ);
 const bH = Track(states.map(s => [s[0], s[2]]), BW, BZ);
 const bR = Track(states.map(s => [s[0], s[3]]), BW, 1);
 const bX = Track(states.map(s => [s[0], s[5]]), 16, 0.9);
-const cam = Track(states.map(s => [s[0] + 0.03, s[4]]), 12, 0.96);   // camera trails the element
-const camX = Track(states.map(s => [s[0] + 0.03, s[5]]), 13, 0.96);
+const cam = Track(states.map(s => [s[0] + 0.03, s[4]]), 10, 0.96);   // camera trails the element
+const camX = Track(states.map(s => [s[0] + 0.03, s[5]]), 11, 0.96);
 const camOf = t0 => { let s = states[states.length - 1]; for (const st of states) if (st[0] <= t0 + 1e-9) s = st; return { k: s[4], x: s[5] }; };
 const bCol = ColorTrack([
   [T.alert, "#FFFFFF"], [T.invClick, "#0E0E0F"], [T.list, "#FFFFFF"],
@@ -298,9 +306,24 @@ const nodeTextCol = ColorTrack([[T.red, "#FFFFFF", 16, 1], [T.nodeClick, "#0E0E0
 // Cursor (screen space) ------------------------------------------------------
 const toScreen = (x, y, t0) => { const c = camOf(t0); return [720 + (x - c.x) * c.k, 720 + y * c.k]; };
 const REST = [1000, 990];
-const TL = { x0: -330, x1: 500, t0: T.grab + 0.05, t1: bt(4, 2, .96) };
+const TL = { x0: -330, x1: 500, t0: T.grab + 0.05, t1: bt(5, 2, .92) };
 const smoother = u => { u = clamp(u, 0, 1); return u * u * u * (u * (u * 6 - 15) + 10); };
-const dragX = t => lerp(TL.x0, TL.x1, smoother((t - TL.t0) / (TL.t1 - TL.t0)));   // the hand, in stage units
+// The hand: a smooth monotone curve through the markers, crossing each one on its
+// beat subdivision, so the detent ticks sit on the grid. Zero velocity at both ends.
+const DRAG_K = [[TL.t0, TL.x0], [T.x39, -90], [T.x40, 160], [T.x41, 400], [TL.t1, TL.x1]];
+const dragX = (() => {
+  const K = DRAG_K, n = K.length, d = [], m = [0];
+  for (let i = 0; i < n - 1; i++) d.push((K[i + 1][1] - K[i][1]) / (K[i + 1][0] - K[i][0]));
+  for (let i = 1; i < n - 1; i++) m.push(d[i - 1] * d[i] <= 0 ? 0 : 2 / (1 / d[i - 1] + 1 / d[i]));   // Fritsch-Carlson
+  m.push(0);
+  return t => {
+    if (t <= K[0][0]) return K[0][1];
+    if (t >= K[n - 1][0]) return K[n - 1][1];
+    let i = 0; while (t > K[i + 1][0]) i++;
+    const h = K[i + 1][0] - K[i][0], u = (t - K[i][0]) / h, u2 = u * u, u3 = u2 * u;
+    return (2 * u3 - 3 * u2 + 1) * K[i][1] + (u3 - 2 * u2 + u) * h * m[i] + (-2 * u3 + 3 * u2) * K[i + 1][1] + (u3 - u2) * h * m[i + 1];
+  };
+})();
 // marker positions are where the hand is on the 8th notes, so ticks sit on the grid
 const MARK = [
   { v: "v2.38", tm: "10:12", x: TL.x0 },
@@ -326,7 +349,7 @@ const PEAK = [cx(CH.peak), cy(DATA[CH.peak])];
 const SPIKE_OFF_Y = 0;    // chart svg shares the card's coordinate space
 const cur = [
   // t, [x,y] screen,  w, z
-  [T.alert + 0.02, toScreen(222, 8, T.alert), 13, 0.95],
+  [T.invClick - 0.6, toScreen(222, 8, T.alert), 11, 0.95],
   [T.invClick + 0.12, [1160, 880], 8, 1],
   [T.list - 0.2, [1300, 1130], 8, 1],
   [T.node + 0.2, toScreen(96, 12, T.node), 9, 0.95],
@@ -414,6 +437,8 @@ const HYP = [
 const ICON_X = '<path d="M7 7l10 10M17 7L7 17"/>', ICON_OK = '<path d="M5 12.5l4.5 4.5L19 7.5"/>';
 const SPIN = '<circle cx="12" cy="12" r="9" stroke-opacity=".22"/><path d="M12 3 a9 9 0 0 1 9 9"/>';
 const poolY = Track([[T.chip, 0], [T.rca, -26, BW, BZ], [T.word, 0]]);
+const toastY = Track([[T.toast, 0], [T.toastSub, -20, BW, BZ], [T.word, 0]]);
+const palSel = ColorTrack([[T.cmdk, "#F2F1EE"], [T.ready, "#EEF3FF", 16, 1], [T.word, "#F2F1EE"]]);
 const okRowY = Track([[T.list, 125], [T.node, 0, 18, 0.9], [T.word, 125]]);
 
 // UI sound cues: [time, name]. The mixer places each sound by its measured peak.
@@ -424,7 +449,7 @@ const CUES = [
   [T.x39, "detent"], [T.x40, "detent"], [T.x41, "detent"], [T.releaseT, "release"],
   [T.conf, "tick"], [T.toggle, "toggle"], [T.metrics, "click"], [T.cmdk, "key"],
   ...Array.from(QUERY, (_, i) => [typeT(i), "key"]),
-  [T.enter, "enter"], [T.approve, "click"], [T.toast, "success"], [T.word, "tick"],
+  [T.ready, "tick"], [T.enter, "enter"], [T.approve, "click"], [T.approved, "tick"], [T.toast, "success"], [T.toastSub, "tick"], [T.word, "tick"],
 ];
 
 // ---------------------------------------------------------------------------
@@ -564,7 +589,7 @@ function seek(tIn) {
 
   // RCA card
   if (L("L_rca", T.rca, T.tabs)) {
-    const f = S(t - T.rca - 0.1, 7.5, 1);
+    const f = S(t - T.rca - 0.08, 9, 1);
     $("confBar").style.width = px(520 * 0.94 * f);
     $("confVal").textContent = Math.round(94 * f) + "%";
     $("togTrack").style.background = togCol(t);
@@ -606,6 +631,7 @@ function seek(tIn) {
 
   // command palette
   if (L("L_pal", T.cmdk, T.enter)) {
+    $("palSel").style.background = palSel(t);
     let n = 0; for (let i = 0; i < QUERY.length; i++) if (t >= typeT(i)) n++;
     const q = QUERY.slice(0, n);
     const caretOn = n > 0 && n < QUERY.length ? true : Math.floor(t / (P / 2)) % 2 === 0;
@@ -630,11 +656,16 @@ function seek(tIn) {
     const p = press(t);
     $("apBtn").style.transform = `translate(-50%,-50%) scale(${lerp(1, p, 0.35).toFixed(4)})`;
     const sw = S(t - T.approve - 0.06, 28, 1);
+    const ok = S(t - T.approved, 22, 1);
+    $("needA").style.opacity = (1 - ok).toFixed(3); $("needA").style.filter = ok > 0.02 && ok < 0.98 ? `blur(${(5 * ok).toFixed(2)}px)` : "none";
+    $("needB").style.opacity = ok.toFixed(3); $("needB").style.filter = ok > 0.02 && ok < 0.98 ? `blur(${(5 * (1 - ok)).toFixed(2)}px)` : "none";
     $("apA").style.opacity = (1 - sw).toFixed(3); $("apA").style.filter = sw > 0.02 && sw < 0.98 ? `blur(${(6 * sw).toFixed(2)}px)` : "none";
     $("apB").style.opacity = sw.toFixed(3); $("apB").style.display = sw < 0.002 ? "none" : "flex";
     $("spin2").style.transform = `rotate(${(t * 420) % 360}deg)`;
   }
+  L("L_toastSub", T.toastSub, T.word, 0.1);
   if (L("L_toast", T.toast, T.word)) {
+    $("L_toast").style.transform += ` translate(0px, ${px(toastY(t))})`;
     const f = S(t - T.toast - 0.03, 24, 1);
     $("toastMs").textContent = Math.round(lerp(2410, 180, f)).toLocaleString("en-US");
   }
